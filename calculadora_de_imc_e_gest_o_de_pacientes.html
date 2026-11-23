@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="claro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de IMC e Gestão de Pacientes — Acessível (WCAG AAA)</title>
+
+  <!-- Importação da fonte Atkinson Hyperlegible (desenvolvida pelo Braille Institute para baixa visão) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN para utilitários de layout fluido e responsividade -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ==========================================================================
+       1. TOKENS DE DESIGN E TEMAS DE ALTO CONTRASTE (WCAG AAA >= 7:1)
+       ========================================================================== */
+    :root {
+      /* Tamanho base de 20px (1.25rem em relação ao padrão de 16px) */
+      font-size: 20px;
+      --font-family-base: 'Atkinson Hyperlegible', Verdana, Arial, sans-serif;
+
+      /* Espaçamentos padrão legíveis */
+      --line-height-current: 1.55;
+      --letter-spacing-current: 0.01em;
+      --word-spacing-current: 0.04em;
+      --card-padding-current: 1.35rem;
+      --cell-padding-y: 0.75rem;
+      --cell-padding-x: 0.75rem;
+
+      /* Tema 1: Alto Contraste Claro (Padrão) */
+      --bg-page: #FFFFFF;
+      --bg-surface: #F4F7FC;
+      --bg-surface-alt: #E5ECF8;
+      --bg-toolbar: #FFFFFF;
+      --text-primary: #000000;
+      --text-secondary: #141414;
+      --accent-primary: #003399;
+      --accent-primary-text: #FFFFFF;
+      --accent-hover: #002266;
+      --danger-bg: #8B0000;
+      --danger-text: #FFFFFF;
+      --danger-surface: #FFF0F0;
+      --success-surface: #E8F8EF;
+      --border-color: #000000;
+      --border-width: 2px;
+      --border-width-strong: 3px;
+      --focus-ring: #C83200;
+      --focus-gap: #FFFFFF;
+      --ruler-border: #003399;
+      --ruler-bg: rgba(0, 51, 153, 0.10);
+    }
+
+    /* Tema 2: Alto Contraste Escuro */
+    html[data-theme="escuro"] {
+      --bg-page: #0A0A0A;
+      --bg-surface: #141414;
+      --bg-surface-alt: #1F242D;
+      --bg-toolbar: #0A0A0A;
+      --text-primary: #FFFFFF;
+      --text-secondary: #F0F0F0;
+      --accent-primary: #4DA6FF;
+      --accent-primary-text: #000000;
+      --accent-hover: #80C0FF;
+      --danger-bg: #FF6B6B;
+      --danger-text: #000000;
+      --danger-surface: #2B1111;
+      --success-surface: #0E2918;
+      --border-color: #FFFFFF;
+      --border-width: 2px;
+      --border-width-strong: 3px;
+      --focus-ring: #4DA6FF;
+      --focus-gap: #0A0A0A;
+      --ruler-border: #4DA6FF;
+      --ruler-bg: rgba(77, 166, 255, 0.14);
+    }
+
+    /* Tema 3: Amarelo sobre Preto (Clássico Baixa Visão) */
+    html[data-theme="amarelo"] {
+      --bg-page: #000000;
+      --bg-surface: #000000;
+      --bg-surface-alt: #1A1800;
+      --bg-toolbar: #000000;
+      --text-primary: #FFE600;
+      --text-secondary: #FFE600;
+      --accent-primary: #FFFFFF;
+      --accent-primary-text: #000000;
+      --accent-hover: #E6E6E6;
+      --danger-bg: #FFE600;
+      --danger-text: #000000;
+      --danger-surface: #1F1C00;
+      --success-surface: #141400;
+      --border-color: #FFE600;
+      --border-width: 2px;
+      --border-width-strong: 3px;
+      --focus-ring: #FFFFFF;
+      --focus-gap: #000000;
+      --ruler-border: #FFE600;
+      --ruler-bg: rgba(255, 230, 0, 0.16);
+    }
+
+    /* Modo de Espaçamento Ampliado */
+    body.espacamento-ampliado {
+      --line-height-current: 1.8;
+      --letter-spacing-current: 0.06em;
+      --word-spacing-current: 0.16em;
+      --card-padding-current: 1.85rem;
+      --cell-padding-y: 1.1rem;
+      --cell-padding-x: 1rem;
+    }
+
+    /* ==========================================================================
+       2. ESTILOS BASE, TIPOGRAFIA E FOCO REFORÇADO
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-family-base);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: var(--line-height-current);
+      letter-spacing: var(--letter-spacing-current);
+      word-spacing: var(--word-spacing-current);
+      overflow-x: hidden;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    /* Anel de foco espesso (4px solid) e de alto contraste em todos os elementos interativos */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 4px solid var(--focus-ring) !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 0 3px var(--focus-gap), 0 0 0 7px var(--focus-ring) !important;
+    }
+
+    /* Link "Pular para o conteúdo principal" (Skip Link) */
+    .skip-link {
+      position: fixed;
+      top: -120px;
+      left: 1rem;
+      z-index: 9999;
+      background-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+      border: var(--border-width-strong) solid var(--border-color);
+      padding: 0.85rem 1.25rem;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+      text-decoration: underline;
+      transition: top 0.15s ease;
+    }
+
+    .skip-link:focus {
+      top: 0.75rem;
+    }
+
+    /* ==========================================================================
+       3. BARRA DE ACESSIBILIDADE FIXA NO TOPO
+       ========================================================================== */
+    .a11y-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background-color: var(--bg-toolbar);
+      border-bottom: var(--border-width-strong) solid var(--border-color);
+      padding: 0.65rem 1rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    /* ==========================================================================
+       4. COMPONENTES DE ALTO CONTRASTE
+       ========================================================================== */
+    .hc-card {
+      background-color: var(--bg-surface);
+      border: var(--border-width-strong) solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: var(--card-padding-current);
+      transition: padding 0.15s ease;
+    }
+
+    .hc-header {
+      background-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+      border-bottom: var(--border-width-strong) solid var(--border-color);
+    }
+
+    .hc-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 2.75rem;
+      padding: 0.5rem 0.9rem;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: var(--border-width) solid var(--border-color);
+      border-radius: 0.5rem;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: transform 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .hc-btn:hover:not(:disabled) {
+      background-color: var(--bg-surface-alt);
+      transform: translateY(-1px);
+    }
+
+    .hc-btn:disabled,
+    .hc-btn[aria-disabled="true"] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+
+    .hc-btn-primary {
+      background-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+      border: var(--border-width) solid var(--border-color);
+    }
+
+    .hc-btn-primary:hover:not(:disabled) {
+      background-color: var(--accent-hover);
+      color: var(--accent-primary-text);
+    }
+
+    .hc-btn[aria-pressed="true"] {
+      background-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+      box-shadow: inset 0 0 0 2px var(--bg-page);
+    }
+
+    .hc-btn-danger {
+      background-color: var(--danger-bg);
+      color: var(--danger-text);
+      border: var(--border-width) solid var(--border-color);
+    }
+
+    .hc-btn-danger:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    /* Inputs grandes com altura mínima de 52px (2.6rem em base 20px = 52px) */
+    .hc-input {
+      width: 100%;
+      min-height: 52px;
+      padding: 0.65rem 0.95rem;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 700;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      border: var(--border-width-strong) solid var(--border-color);
+      border-radius: 0.5rem;
+    }
+
+    .hc-input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.8;
+      font-weight: 400;
+    }
+
+    .hc-input[aria-invalid="true"] {
+      border-style: dashed;
+      background-color: var(--danger-surface);
+    }
+
+    .hc-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.35rem 0.7rem;
+      border: var(--border-width) solid var(--border-color);
+      border-radius: 0.45rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================================
+       5. TABELA DE PACIENTES ACESSÍVEL E RESPONSIVA (SEM ROLAGEM HORIZONTAL)
+       ========================================================================== */
+    .tabela-pacientes {
+      width: 100%;
+      border-collapse: collapse;
+      border: var(--border-width) solid var(--border-color);
+      background-color: var(--bg-page);
+    }
+
+    .tabela-pacientes thead {
+      background-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+    }
+
+    .tabela-pacientes th,
+    .tabela-pacientes td {
+      border: var(--border-width) solid var(--border-color);
+      padding: var(--cell-padding-y) var(--cell-padding-x);
+      text-align: left;
+      vertical-align: middle;
+      transition: padding 0.15s ease;
+    }
+
+    .tabela-pacientes th {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .tabela-pacientes tbody tr {
+      transition: opacity 0.25s ease, transform 0.25s ease, background-color 0.15s ease;
+    }
+
+    .tabela-pacientes tbody tr:nth-child(even) {
+      background-color: var(--bg-surface);
+    }
+
+    .tabela-pacientes tbody tr:hover {
+      background-color: var(--bg-surface-alt);
+    }
+
+    /* Animação suave ao remover paciente */
+    .tabela-pacientes tbody tr.removendo-linha {
+      opacity: 0;
+      transform: translateX(-1rem);
+    }
+
+    @keyframes destaqueLinha {
+      0% { background-color: var(--bg-surface-alt); }
+      100% { background-color: transparent; }
+    }
+
+    .linha-recem-adicionada {
+      animation: destaqueLinha 1.6s ease-out;
+    }
+
+    /* Adaptação fluida em telas menores ou zoom elevado (160% - 200%) */
+    @media (max-width: 1080px) {
+      .tabela-pacientes,
+      .tabela-pacientes thead,
+      .tabela-pacientes tbody,
+      .tabela-pacientes th,
+      .tabela-pacientes td,
+      .tabela-pacientes tr {
+        display: block;
+      }
+
+      .tabela-pacientes thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+
+      .tabela-pacientes tbody tr {
+        margin-bottom: 1.25rem;
+        border: var(--border-width-strong) solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 0.65rem;
+        background-color: var(--bg-surface);
+      }
+
+      .tabela-pacientes tbody tr:last-child {
+        margin-bottom: 0;
+      }
+
+      .tabela-pacientes td {
+        border: none;
+        border-bottom: var(--border-width) solid var(--border-color);
+        padding: 0.65rem 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .tabela-pacientes td:last-child {
+        border-bottom: none;
+        padding-top: 0.85rem;
+      }
+
+      .tabela-pacientes td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+    }
+
+    /* ==========================================================================
+       6. GUIA DE LEITURA HORIZONTAL
+       ========================================================================== */
+    #guia-leitura {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 3.1rem;
+      transform: translateY(-50%);
+      pointer-events: none;
+      z-index: 900;
+      border-top: 4px solid var(--ruler-border);
+      border-bottom: 4px solid var(--ruler-border);
+      background-color: var(--ruler-bg);
+      box-shadow: 0 0 0 2px var(--bg-page);
+      display: none;
+    }
+
+    #guia-leitura.ativo {
+      display: block;
+    }
+
+    /* ==========================================================================
+       7. BANNER DE STATUS COM DESFAZER REMOÇÃO (10 SEGUNDOS)
+       ========================================================================== */
+    .banner-desfazer {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      left: 1.25rem;
+      max-width: 36rem;
+      margin-left: auto;
+      z-index: 1100;
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      border: 4px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Link de salto rápido para usuários de teclado e leitores de tela -->
+  <a href="#conteudo-principal" class="skip-link">
+    Pular para o conteúdo principal
+  </a>
+
+  <!-- Régua visual horizontal de Guia de Leitura -->
+  <div id="guia-leitura" aria-hidden="true"></div>
+
+  <!-- ========================================================================
+       BARRA DE ACESSIBILIDADE FIXA NO TOPO
+       ======================================================================== -->
+  <aside class="a11y-toolbar" aria-label="Barra de ferramentas de acessibilidade para baixa visão">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3">
+
+      <!-- Controle de Tamanho de Texto: A-, Percentual, A+, Resetar -->
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Controle de tamanho de texto">
+        <span class="font-bold text-sm uppercase tracking-wider mr-1">Texto:</span>
+
+        <button type="button" id="btn-diminuir-fonte" class="hc-btn" aria-label="Diminuir fonte">
+          <span>A-</span>
+        </button>
+
+        <span id="indicador-fonte" class="hc-badge" aria-live="polite" title="Escala atual do texto">
+          100%
+        </span>
+
+        <button type="button" id="btn-aumentar-fonte" class="hc-btn" aria-label="Aumentar fonte">
+          <span>A+</span>
+        </button>
+
+        <button type="button" id="btn-resetar-fonte" class="hc-btn" aria-label="Resetar tamanho da fonte para 100%">
+          <span>Resetar</span>
+        </button>
+      </div>
+
+      <!-- Seletor de 3 Temas de Alto Contraste (WCAG AAA >= 7:1) -->
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Temas de alto contraste">
+        <span class="font-bold text-sm uppercase tracking-wider mr-1">Tema:</span>
+
+        <button type="button" class="hc-btn btn-tema" data-theme-target="claro" aria-pressed="true">
+          <span>Alto Contraste Claro</span>
+        </button>
+
+        <button type="button" class="hc-btn btn-tema" data-theme-target="escuro" aria-pressed="false">
+          <span>Alto Contraste Escuro</span>
+        </button>
+
+        <button type="button" class="hc-btn btn-tema" data-theme-target="amarelo" aria-pressed="false">
+          <span>Amarelo sobre Preto</span>
+        </button>
+      </div>
+
+      <!-- Espaçamento Ampliado, Guia de Leitura Horizontal e Restaurar Padrões -->
+      <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Auxílios de leitura e restauração">
+        <button type="button" id="btn-espacamento" class="hc-btn" aria-pressed="false">
+          <span>Espaçamento Ampliado</span>
+        </button>
+
+        <button type="button" id="btn-guia-leitura" class="hc-btn" aria-pressed="false">
+          <span>Guia de Leitura Horizontal</span>
+        </button>
+
+        <button type="button" id="btn-restaurar-padroes" class="hc-btn">
+          <span>Restaurar Padrões</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Região global para anúncios dinâmicos em leitores de tela -->
+  <div id="anunciador-global" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ========================================================================
+       CABEÇALHO PRINCIPAL
+       ======================================================================== -->
+  <header class="hc-header py-6 px-4">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="p-3 rounded-xl border-2 border-current flex-shrink-0" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            <path d="M9 14l2 2 4-4"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">
+            Calculadora de IMC e Gestão de Pacientes
+          </h1>
+          <p class="text-base sm:text-lg font-normal mt-1">
+            Painel de avaliação nutricional acessível com alto contraste, cálculo automático de IMC e leitura assistida (WCAG AAA).
+          </p>
+        </div>
+      </div>
+
+      <a href="#secao-adicionar-paciente" class="hc-btn">
+        <span>+ Novo Paciente</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       CONTEÚDO PRINCIPAL (LAYOUT FLUIDO EM COLUNA ÚNICA)
+       ======================================================================== -->
+  <main id="conteudo-principal" tabindex="-1" class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+
+    <!-- SEÇÃO 1: MEUS PACIENTES -->
+    <section aria-labelledby="titulo-meus-pacientes" class="hc-card space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b-2 border-current pb-4">
+        <div>
+          <h2 id="titulo-meus-pacientes" class="text-xl sm:text-2xl font-bold">Meus Pacientes</h2>
+          <p class="text-base mt-1">
+            Consulte, filtre, importe ou remova registros de pacientes com classificação nutricional automática.
+          </p>
+        </div>
+
+        <button type="button" id="btn-importar-externos" class="hc-btn hc-btn-primary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Importar Pacientes Externos</span>
+        </button>
+      </div>
+
+      <!-- Feedback da importação externa em aria-live -->
+      <div id="feedback-importacao" class="hidden p-4 rounded-lg border-2 border-current font-bold text-base" role="status" aria-live="polite"></div>
+
+      <!-- Campo de Filtro em Tempo Real -->
+      <div class="space-y-3" role="search" aria-label="Filtrar tabela de pacientes">
+        <label for="filtro-tabela" class="block font-bold text-lg">
+          Filtrar pacientes pelo nome:
+        </label>
+        <div class="flex flex-wrap items-stretch gap-3">
+          <div class="flex-1 min-w-[14rem]">
+            <input
+              type="search"
+              id="filtro-tabela"
+              name="filtro"
+              class="hc-input"
+              placeholder="Digite o nome para filtrar (ex: Erica, Paulo)..."
+              autocomplete="off"
+            >
+          </div>
+          <button type="button" id="btn-limpar-filtro" class="hc-btn">
+            <span>Limpar filtro</span>
+          </button>
+        </div>
+
+        <!-- Região aria-live="polite" informando quantos pacientes estão visíveis -->
+        <p id="contador-visiveis" class="font-bold text-base m-0 pt-1" aria-live="polite">
+          Exibindo 5 de 5 pacientes visíveis.
+        </p>
+      </div>
+
+      <!-- Tabela de Pacientes Acessível -->
+      <div class="w-full">
+        <table class="tabela-pacientes" aria-describedby="legenda-tabela-pacientes">
+          <caption id="legenda-tabela-pacientes" class="sr-only">
+            Lista de pacientes com nome, peso em quilogramas, altura em metros, percentual de gordura corporal, IMC calculado, classificação nutricional e botão de remoção.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Nome</th>
+              <th scope="col">Peso (kg)</th>
+              <th scope="col">Altura (m)</th>
+              <th scope="col">Gordura Corporal (%)</th>
+              <th scope="col">IMC</th>
+              <th scope="col">Classificação Nutricional</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-pacientes">
+            <!-- Linhas geradas dinamicamente via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO 2: ADICIONAR NOVO PACIENTE -->
+    <section id="secao-adicionar-paciente" aria-labelledby="titulo-adicionar-paciente" class="hc-card space-y-6">
+      <div class="border-b-2 border-current pb-4">
+        <h2 id="titulo-adicionar-paciente" class="text-xl sm:text-2xl font-bold">Adicionar Novo Paciente</h2>
+        <p class="text-base mt-1">
+          Preencha todos os campos obrigatórios abaixo. Valores decimais aceitam ponto ou vírgula (ex: 1,75 ou 1.75).
+        </p>
+      </div>
+
+      <!-- Caixa de alerta de alto contraste (role="alert") para erros de validação -->
+      <div
+        id="caixa-erros"
+        class="hidden p-4 rounded-lg border-[3px] border-current"
+        style="background-color: var(--danger-surface);"
+        role="alert"
+        tabindex="-1"
+      >
+        <div class="flex items-center gap-3 mb-2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <h3 class="font-bold text-lg m-0">Atenção! Corrija os seguintes erros:</h3>
+        </div>
+        <ul id="lista-erros" class="list-disc pl-7 space-y-2 font-bold text-base"></ul>
+      </div>
+
+      <form id="form-adiciona-paciente" novalidate class="space-y-5">
+        <div class="space-y-2">
+          <label for="campo-nome" class="block font-bold text-lg">
+            Nome (obrigatório):
+          </label>
+          <input
+            id="campo-nome"
+            name="nome"
+            type="text"
+            class="hc-input"
+            placeholder="Ex: Fernanda Souza"
+            aria-describedby="ajuda-nome"
+            required
+          >
+          <p id="ajuda-nome" class="text-sm m-0">
+            Digite o nome completo ou o primeiro nome do paciente.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="campo-peso" class="block font-bold text-lg">
+            Peso em kg (obrigatório):
+          </label>
+          <input
+            id="campo-peso"
+            name="peso"
+            type="text"
+            inputmode="decimal"
+            class="hc-input"
+            placeholder="Ex: 72,5"
+            aria-describedby="ajuda-peso"
+            required
+          >
+          <p id="ajuda-peso" class="text-sm m-0">
+            Informe um valor maior que 0 e menor que 1000 kg (aceita ponto ou vírgula).
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="campo-altura" class="block font-bold text-lg">
+            Altura em metros (obrigatório):
+          </label>
+          <input
+            id="campo-altura"
+            name="altura"
+            type="text"
+            inputmode="decimal"
+            class="hc-input"
+            placeholder="Ex: 1,68"
+            aria-describedby="ajuda-altura"
+            required
+          >
+          <p id="ajuda-altura" class="text-sm m-0">
+            Informe um valor maior que 0 e menor que 3,00 metros (aceita ponto ou vírgula).
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label for="campo-gordura" class="block font-bold text-lg">
+            Gordura corporal % (obrigatório):
+          </label>
+          <input
+            id="campo-gordura"
+            name="gordura"
+            type="text"
+            inputmode="decimal"
+            class="hc-input"
+            placeholder="Ex: 22,0"
+            aria-describedby="ajuda-gordura"
+            required
+          >
+          <p id="ajuda-gordura" class="text-sm m-0">
+            Informe um percentual entre 0% e 100% (aceita ponto ou vírgula).
+          </p>
+        </div>
+
+        <!-- Pré-visualização acessível do cálculo de IMC -->
+        <div class="p-4 rounded-lg border-2 border-dashed border-current flex flex-wrap items-center justify-between gap-2" aria-live="polite">
+          <span class="font-bold text-base">Pré-visualização do IMC:</span>
+          <span id="preview-imc" class="font-bold text-base">
+            Informe peso e altura válidos para visualizar o IMC calculado.
+          </span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 pt-2">
+          <button type="submit" id="btn-adicionar-paciente" class="hc-btn hc-btn-primary text-lg px-6 py-3">
+            <span>Adicionar Paciente</span>
+          </button>
+
+          <button type="reset" id="btn-limpar-formulario" class="hc-btn">
+            <span>Limpar Formulário</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- SEÇÃO 3: REFERÊNCIA DE CLASSIFICAÇÃO NUTRICIONAL -->
+    <section aria-labelledby="titulo-referencia-imc" class="hc-card space-y-4">
+      <h2 id="titulo-referencia-imc" class="text-xl font-bold">Referência de Classificação Nutricional (IMC)</h2>
+      <p class="text-base">
+        Fórmula utilizada: <strong>IMC = Peso (kg) &divide; [Altura (m) &times; Altura (m)]</strong>. Cada faixa possui texto descritivo e ícone distinto:
+      </p>
+      <div id="grid-referencia-imc" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Preenchido via JavaScript -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       BANNER DE STATUS COM BOTÃO "DESFAZER REMOÇÃO" (10 SEGUNDOS)
+       ======================================================================== -->
+  <div id="banner-desfazer" class="banner-desfazer hidden" role="status" aria-live="polite">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <p id="texto-banner-desfazer" class="font-bold text-base m-0">
+        Paciente removido.
+      </p>
+      <div class="flex items-center gap-2">
+        <button type="button" id="btn-desfazer-remocao" class="hc-btn hc-btn-primary">
+          <span>Desfazer remoção</span>
+        </button>
+        <button type="button" id="btn-fechar-banner" class="hc-btn" aria-label="Fechar aviso de remoção">
+          <span>Fechar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rodapé acessível -->
+  <footer class="border-t-[3px] border-current py-6 px-4 mt-10">
+    <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-4 text-base">
+      <p class="font-bold m-0">Calculadora de IMC e Gestão de Pacientes — Conformidade WCAG AAA</p>
+      <a href="#conteudo-principal" class="hc-btn">Voltar ao topo</a>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       LÓGICA COMPLETA DA APLICAÇÃO
+       ======================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      /* ======================================================================
+         1. ANÚNCIO EM LEITORES DE TELA E FEEDBACK SONORO OPCIONAL
+         ====================================================================== */
+      function anunciarStatus(mensagem) {
+        const anunciador = document.getElementById('anunciador-global');
+        if (!anunciador) return;
+        anunciador.textContent = '';
+        window.setTimeout(function () {
+          anunciador.textContent = mensagem;
+        }, 40);
+      }
+
+      /* ======================================================================
+         2. MÓDULO DE ACESSIBILIDADE PARA BAIXA VISÃO (BARRA SUPERIOR)
+         ====================================================================== */
+      const STORAGE_KEY = 'calc_imc_gestao_pacientes_a11y_v1';
+      const ESCALAS_FONTE = [100, 115, 130, 145, 160];
+
+      const PREFS_PADRAO = {
+        escalaFonte: 100,
+        tema: 'claro',
+        espacamento: false,
+        guiaLeitura: false
+      };
+
+      let prefsAtuais = Object.assign({}, PREFS_PADRAO);
+
+      function carregarPreferencias() {
+        try {
+          const salvo = localStorage.getItem(STORAGE_KEY);
+          if (salvo) {
+            const parsed = JSON.parse(salvo);
+            prefsAtuais = Object.assign({}, PREFS_PADRAO, parsed);
+            if (!ESCALAS_FONTE.includes(prefsAtuais.escalaFonte)) {
+              prefsAtuais.escalaFonte = 100;
+            }
+          }
+        } catch (e) {
+          prefsAtuais = Object.assign({}, PREFS_PADRAO);
+        }
+      }
+
+      function salvarPreferencias() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(prefsAtuais));
+        } catch (e) {
+          // Ignora caso o armazenamento local esteja indisponível
+        }
+      }
+
+      function aplicarPreferenciasA11y() {
+        // 1. Escala da fonte (base 20px)
+        const tamanhoPx = (20 * prefsAtuais.escalaFonte) / 100;
+        document.documentElement.style.fontSize = tamanhoPx + 'px';
+
+        const indicador = document.getElementById('indicador-fonte');
+        const btnDiminuir = document.getElementById('btn-diminuir-fonte');
+        const btnAumentar = document.getElementById('btn-aumentar-fonte');
+
+        if (indicador) {
+          indicador.textContent = prefsAtuais.escalaFonte + '%';
+        }
+        if (btnDiminuir) {
+          const noMinimo = prefsAtuais.escalaFonte <= ESCALAS_FONTE[0];
+          btnDiminuir.disabled = noMinimo;
+          btnDiminuir.setAttribute('aria-disabled', String(noMinimo));
+        }
+        if (btnAumentar) {
+          const noMaximo = prefsAtuais.escalaFonte >= ESCALAS_FONTE[ESCALAS_FONTE.length - 1];
+          btnAumentar.disabled = noMaximo;
+          btnAumentar.setAttribute('aria-disabled', String(noMaximo));
+        }
+
+        // 2. Tema de alto contraste
+        document.documentElement.setAttribute('data-theme', prefsAtuais.tema);
+        document.querySelectorAll('.btn-tema').forEach(function (botao) {
+          const ativo = botao.getAttribute('data-theme-target') === prefsAtuais.tema;
+          botao.setAttribute('aria-pressed', String(ativo));
+        });
+
+        // 3. Espaçamento ampliado
+        document.body.classList.toggle('espacamento-ampliado', Boolean(prefsAtuais.espacamento));
+        const btnEspacamento = document.getElementById('btn-espacamento');
+        if (btnEspacamento) {
+          btnEspacamento.setAttribute('aria-pressed', String(Boolean(prefsAtuais.espacamento)));
+        }
+
+        // 4. Guia de leitura horizontal
+        const guia = document.getElementById('guia-leitura');
+        const btnGuia = document.getElementById('btn-guia-leitura');
+        if (guia) {
+          guia.classList.toggle('ativo', Boolean(prefsAtuais.guiaLeitura));
+        }
+        if (btnGuia) {
+          btnGuia.setAttribute('aria-pressed', String(Boolean(prefsAtuais.guiaLeitura)));
+        }
+      }
+
+      function inicializarBarraAcessibilidade() {
+        carregarPreferencias();
+        aplicarPreferenciasA11y();
+
+        const btnDiminuir = document.getElementById('btn-diminuir-fonte');
+        const btnAumentar = document.getElementById('btn-aumentar-fonte');
+        const btnResetarFonte = document.getElementById('btn-resetar-fonte');
+        const btnEspacamento = document.getElementById('btn-espacamento');
+        const btnGuia = document.getElementById('btn-guia-leitura');
+        const btnRestaurarPadroes = document.getElementById('btn-restaurar-padroes');
+        const guia = document.getElementById('guia-leitura');
+
+        btnDiminuir.addEventListener('click', function () {
+          const idx = ESCALAS_FONTE.indexOf(prefsAtuais.escalaFonte);
+          if (idx > 0) {
+            prefsAtuais.escalaFonte = ESCALAS_FONTE[idx - 1];
+            aplicarPreferenciasA11y();
+            salvarPreferencias();
+            anunciarStatus('Tamanho do texto reduzido para ' + prefsAtuais.escalaFonte + ' por cento.');
+          }
+        });
+
+        btnAumentar.addEventListener('click', function () {
+          const idx = ESCALAS_FONTE.indexOf(prefsAtuais.escalaFonte);
+          if (idx !== -1 && idx < ESCALAS_FONTE.length - 1) {
+            prefsAtuais.escalaFonte = ESCALAS_FONTE[idx + 1];
+            aplicarPreferenciasA11y();
+            salvarPreferencias();
+            anunciarStatus('Tamanho do texto aumentado para ' + prefsAtuais.escalaFonte + ' por cento.');
+          }
+        });
+
+        btnResetarFonte.addEventListener('click', function () {
+          prefsAtuais.escalaFonte = 100;
+          aplicarPreferenciasA11y();
+          salvarPreferencias();
+          anunciarStatus('Tamanho do texto redefinido para 100 por cento.');
+        });
+
+        document.querySelectorAll('.btn-tema').forEach(function (botao) {
+          botao.addEventListener('click', function () {
+            prefsAtuais.tema = botao.getAttribute('data-theme-target');
+            aplicarPreferenciasA11y();
+            salvarPreferencias();
+            anunciarStatus('Tema alterado para ' + botao.textContent.trim() + '.');
+          });
+        });
+
+        btnEspacamento.addEventListener('click', function () {
+          prefsAtuais.espacamento = !prefsAtuais.espacamento;
+          aplicarPreferenciasA11y();
+          salvarPreferencias();
+          anunciarStatus(
+            prefsAtuais.espacamento
+              ? 'Espaçamento ampliado ativado.'
+              : 'Espaçamento padrão restaurado.'
+          );
+        });
+
+        btnGuia.addEventListener('click', function () {
+          prefsAtuais.guiaLeitura = !prefsAtuais.guiaLeitura;
+          aplicarPreferenciasA11y();
+          salvarPreferencias();
+          anunciarStatus(
+            prefsAtuais.guiaLeitura
+              ? 'Guia de leitura horizontal ativado.'
+              : 'Guia de leitura horizontal desativado.'
+          );
+        });
+
+        btnRestaurarPadroes.addEventListener('click', function () {
+          try {
+            localStorage.removeItem(STORAGE_KEY);
+          } catch (e) {
+            // Ignora
+          }
+          prefsAtuais = Object.assign({}, PREFS_PADRAO);
+          aplicarPreferenciasA11y();
+          anunciarStatus('Preferências de acessibilidade restauradas para os padrões iniciais.');
+        });
+
+        // Acompanha posição vertical do cursor, toque e foco do teclado
+        function moverGuia(clientY) {
+          if (!prefsAtuais.guiaLeitura || !guia) return;
+          guia.style.top = clientY + 'px';
+        }
+
+        document.addEventListener('mousemove', function (e) {
+          moverGuia(e.clientY);
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function (e) {
+          if (e.touches && e.touches.length > 0) {
+            moverGuia(e.touches[0].clientY);
+          }
+        }, { passive: true });
+
+        document.addEventListener('focusin', function (e) {
+          if (!prefsAtuais.guiaLeitura || !e.target || !e.target.getBoundingClientRect) return;
+          const rect = e.target.getBoundingClientRect();
+          if (rect.height > 0) {
+            moverGuia(rect.top + rect.height / 2);
+          }
+        });
+      }
+
+      /* ======================================================================
+         3. CÁLCULO DE IMC, PARSING DECIMAL (PONTO/VÍRGULA) E CLASSIFICAÇÃO
+         ====================================================================== */
+      function converterDecimal(valorTexto) {
+        if (typeof valorTexto === 'number') return valorTexto;
+        if (typeof valorTexto !== 'string') return NaN;
+        const limpo = valorTexto.trim().replace(',', '.');
+        if (limpo === '') return NaN;
+        return Number(limpo);
+      }
+
+      function validaNome(nome) {
+        return typeof nome === 'string' && nome.trim().length >= 2;
+      }
+
+      function validaPeso(peso) {
+        return typeof peso === 'number' && !isNaN(peso) && isFinite(peso) && peso > 0 && peso < 1000;
+      }
+
+      function validaAltura(altura) {
+        return typeof altura === 'number' && !isNaN(altura) && isFinite(altura) && altura > 0 && altura < 3.00;
+      }
+
+      function validaGordura(gordura) {
+        return typeof gordura === 'number' && !isNaN(gordura) && isFinite(gordura) && gordura >= 0 && gordura <= 100;
+      }
+
+      function calculaImc(peso, altura) {
+        return (peso / (altura * altura)).toFixed(2);
+      }
+
+      function obterClassificacaoImc(imcValor) {
+        if (imcValor < 18.5) {
+          return {
+            texto: 'Abaixo do peso',
+            faixa: 'Menor que 18,50',
+            icone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>'
+          };
+        }
+
+        if (imcValor < 25.0) {
+          return {
+            texto: 'Peso adequado',
+            faixa: '18,50 a 24,99',
+            icone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+          };
+        }
+
+        if (imcValor < 30.0) {
+          return {
+            texto: 'Sobrepeso',
+            faixa: '25,00 a 29,99',
+            icone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+          };
+        }
+
+        return {
+          texto: 'Obesidade',
+          faixa: 'Maior ou igual a 30,00',
+          icone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+        };
+      }
+
+      function renderizarReferenciaImc() {
+        const grid = document.getElementById('grid-referencia-imc');
+        if (!grid) return;
+        const exemplos = [17.0, 22.0, 27.0, 32.0];
+        grid.innerHTML = exemplos.map(function (valor) {
+          const info = obterClassificacaoImc(valor);
+          return (
+            '<div class="p-3 rounded-lg border-2 border-current flex items-center gap-3">' +
+              '<span class="flex-shrink-0">' + info.icone + '</span>' +
+              '<div>' +
+                '<div class="font-bold text-base">' + info.texto + '</div>' +
+                '<div class="text-sm">IMC: ' + info.faixa + '</div>' +
+              '</div>' +
+            '</div>'
+          );
+        }).join('');
+      }
+
+      /* ======================================================================
+         4. DADOS DOS PACIENTES, RENDERIZAÇÃO E REMOÇÃO COM DESFAZER (10s)
+         ====================================================================== */
+      let listaPacientes = [
+        { id: 'pac-1', nome: 'Paulo', peso: 100, altura: 2.00, gordura: 10 },
+        { id: 'pac-2', nome: 'João', peso: 80, altura: 1.72, gordura: 40 },
+        { id: 'pac-3', nome: 'Erica', peso: 54, altura: 1.64, gordura: 14 },
+        { id: 'pac-4', nome: 'Douglas', peso: 85, altura: 1.73, gordura: 24 },
+        { id: 'pac-5', nome: 'Tatiana', peso: 46, altura: 1.55, gordura: 19 }
+      ];
+
+      let ultimoRemovido = null;
+      let timerDesfazer = null;
+
+      function normalizarTexto(texto) {
+        return String(texto)
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim();
+      }
+
+      function escaparHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      }
+
+      function renderizarTabela(idDestaque) {
+        const tbody = document.getElementById('tabela-pacientes');
+        const inputFiltro = document.getElementById('filtro-tabela');
+        const termo = normalizarTexto(inputFiltro ? inputFiltro.value : '');
+
+        tbody.innerHTML = '';
+        let visiveis = 0;
+
+        listaPacientes.forEach(function (paciente) {
+          const corresponde = termo === '' || normalizarTexto(paciente.nome).includes(termo);
+          if (!corresponde) return;
+
+          visiveis++;
+          const imcStr = calculaImc(paciente.peso, paciente.altura);
+          const classificacao = obterClassificacaoImc(parseFloat(imcStr));
+
+          const tr = document.createElement('tr');
+          tr.setAttribute('data-row-id', paciente.id);
+          if (idDestaque && paciente.id === idDestaque) {
+            tr.classList.add('linha-recem-adicionada');
+          }
+
+          tr.innerHTML =
+            '<td data-label="Nome" class="font-bold text-lg">' + escaparHtml(paciente.nome) + '</td>' +
+            '<td data-label="Peso (kg)">' + paciente.peso.toFixed(1) + ' kg</td>' +
+            '<td data-label="Altura (m)">' + paciente.altura.toFixed(2) + ' m</td>' +
+            '<td data-label="Gordura Corporal (%)">' + paciente.gordura.toFixed(1) + '%</td>' +
+            '<td data-label="IMC" class="font-bold text-lg">' + imcStr + '</td>' +
+            '<td data-label="Classificação Nutricional">' +
+              '<span class="hc-badge">' +
+                classificacao.icone +
+                '<span>' + classificacao.texto + '</span>' +
+              '</span>' +
+            '</td>' +
+            '<td data-label="Ações">' +
+              '<button type="button" class="hc-btn hc-btn-danger btn-remover-paciente" data-id="' + paciente.id + '">' +
+                '<span>Remover ' + escaparHtml(paciente.nome) + '</span>' +
+              '</button>' +
+            '</td>';
+
+          tbody.appendChild(tr);
+        });
+
+        if (visiveis === 0) {
+          const trVazia = document.createElement('tr');
+          trVazia.innerHTML =
+            '<td colspan="7" class="text-center py-6 font-bold text-lg">' +
+              'Nenhum paciente visível para o filtro informado. Clique em "Limpar filtro" para exibir todos.' +
+            '</td>';
+          tbody.appendChild(trVazia);
+        }
+
+        const contador = document.getElementById('contador-visiveis');
+        if (contador) {
+          contador.textContent = 'Exibindo ' + visiveis + ' de ' + listaPacientes.length + ' pacientes visíveis.';
+        }
+      }
+
+      function removerPaciente(id) {
+        const indice = listaPacientes.findIndex(function (p) { return p.id === id; });
+        if (indice === -1) return;
+
+        const pacienteRemovido = listaPacientes[indice];
+        const tr = document.querySelector('tr[data-row-id="' + id + '"]');
+
+        function concluirRemocao() {
+          ultimoRemovido = {
+            paciente: pacienteRemovido,
+            indice: indice
+          };
+          listaPacientes.splice(indice, 1);
+          renderizarTabela();
+          exibirBannerDesfazer(pacienteRemovido.nome);
+        }
+
+        if (tr) {
+          tr.classList.add('removendo-linha');
+          window.setTimeout(concluirRemocao, 220);
+        } else {
+          concluirRemocao();
+        }
+      }
+
+      function exibirBannerDesfazer(nomePaciente) {
+        const banner = document.getElementById('banner-desfazer');
+        const texto = document.getElementById('texto-banner-desfazer');
+        const btnDesfazer = document.getElementById('btn-desfazer-remocao');
+
+        if (!banner || !texto) return;
+
+        texto.textContent = 'Paciente "' + nomePaciente + '" removido da tabela.';
+        banner.classList.remove('hidden');
+
+        if (timerDesfazer) {
+          window.clearTimeout(timerDesfazer);
+        }
+
+        // Disponível por 10 segundos conforme especificado
+        timerDesfazer = window.setTimeout(function () {
+          banner.classList.add('hidden');
+          ultimoRemovido = null;
+        }, 10000);
+
+        if (btnDesfazer) {
+          btnDesfazer.focus();
+        }
+      }
+
+      function desfazerRemocao() {
+        if (!ultimoRemovido) return;
+
+        const { paciente, indice } = ultimoRemovido;
+        const pos = Math.min(indice, listaPacientes.length);
+        listaPacientes.splice(pos, 0, paciente);
+
+        ultimoRemovido = null;
+        if (timerDesfazer) {
+          window.clearTimeout(timerDesfazer);
+        }
+
+        const banner = document.getElementById('banner-desfazer');
+        if (banner) {
+          banner.classList.add('hidden');
+        }
+
+        renderizarTabela(paciente.id);
+        anunciarStatus('Remoção desfeita. Paciente ' + paciente.nome + ' restaurado na tabela.');
+      }
+
+      function inicializarEventosTabela() {
+        document.getElementById('tabela-pacientes').addEventListener('click', function (e) {
+          const btnRemover = e.target.closest('.btn-remover-paciente');
+          if (btnRemover) {
+            removerPaciente(btnRemover.getAttribute('data-id'));
+          }
+        });
+
+        document.getElementById('btn-desfazer-remocao').addEventListener('click', desfazerRemocao);
+        document.getElementById('btn-fechar-banner').addEventListener('click', function () {
+          document.getElementById('banner-desfazer').classList.add('hidden');
+        });
+      }
+
+      /* ======================================================================
+         5. FILTRO EM TEMPO REAL
+         ====================================================================== */
+      function inicializarFiltro() {
+        const inputFiltro = document.getElementById('filtro-tabela');
+        const btnLimpar = document.getElementById('btn-limpar-filtro');
+
+        inputFiltro.addEventListener('input', function () {
+          renderizarTabela();
+        });
+
+        btnLimpar.addEventListener('click', function () {
+          inputFiltro.value = '';
+          renderizarTabela();
+          inputFiltro.focus();
+        });
+      }
+
+      /* ======================================================================
+         6. IMPORTAR PACIENTES EXTERNOS (JÉSSICA, GABRIEL, MARIANA E LUCAS)
+         ====================================================================== */
+      const PACIENTES_EXTERNOS = [
+        { nome: 'Jéssica', peso: 47, altura: 1.54, gordura: 17 },
+        { nome: 'Gabriel', peso: 92, altura: 1.81, gordura: 26 },
+        { nome: 'Mariana', peso: 63, altura: 1.67, gordura: 21 },
+        { nome: 'Lucas', peso: 78, altura: 1.76, gordura: 15 }
+      ];
+
+      function inicializarImportacaoExterna() {
+        const btnImportar = document.getElementById('btn-importar-externos');
+        const feedback = document.getElementById('feedback-importacao');
+
+        btnImportar.addEventListener('click', function () {
+          btnImportar.disabled = true;
+          btnImportar.setAttribute('aria-disabled', 'true');
+          feedback.style.backgroundColor = 'var(--bg-surface-alt)';
+          feedback.textContent = 'Importando pacientes externos, aguarde...';
+          feedback.classList.remove('hidden');
+
+          window.setTimeout(function () {
+            const importados = [];
+
+            PACIENTES_EXTERNOS.forEach(function (ext, idx) {
+              const jaExiste = listaPacientes.some(function (atual) {
+                return normalizarTexto(atual.nome) === normalizarTexto(ext.nome);
+              });
+
+              if (!jaExiste) {
+                listaPacientes.push({
+                  id: 'ext-' + Date.now() + '-' + idx,
+                  nome: ext.nome,
+                  peso: ext.peso,
+                  altura: ext.altura,
+                  gordura: ext.gordura
+                });
+                importados.push(ext.nome);
+              }
+            });
+
+            btnImportar.disabled = false;
+            btnImportar.setAttribute('aria-disabled', 'false');
+
+            if (importados.length > 0) {
+              const inputFiltro = document.getElementById('filtro-tabela');
+              if (inputFiltro && inputFiltro.value.trim() !== '') {
+                inputFiltro.value = '';
+              }
+              renderizarTabela();
+              feedback.style.backgroundColor = 'var(--success-surface)';
+              feedback.textContent =
+                importados.length + ' pacientes externos importados com sucesso: ' + importados.join(', ') + '.';
+            } else {
+              feedback.style.backgroundColor = 'var(--bg-surface-alt)';
+              feedback.textContent =
+                'Todos os pacientes externos (Jéssica, Gabriel, Mariana e Lucas) já constam na tabela.';
+            }
+          }, 250);
+        });
+      }
+
+      /* ======================================================================
+         7. FORMULÁRIO DE CADASTRO COM VALIDAÇÃO COMPLETA E ALERTA ACESSÍVEL
+         ====================================================================== */
+      function validarFormulario(dados) {
+        const erros = [];
+
+        if (!validaNome(dados.nome)) {
+          erros.push({
+            campoId: 'campo-nome',
+            mensagem: 'O campo Nome é obrigatório e deve conter pelo menos 2 caracteres.'
+          });
+        }
+
+        if (!validaPeso(dados.peso)) {
+          erros.push({
+            campoId: 'campo-peso',
+            mensagem: 'O campo Peso em kg é obrigatório e deve ser maior que 0 e menor que 1000.'
+          });
+        }
+
+        if (!validaAltura(dados.altura)) {
+          erros.push({
+            campoId: 'campo-altura',
+            mensagem: 'O campo Altura em metros é obrigatório e deve ser maior que 0 e menor que 3,00.'
+          });
+        }
+
+        if (!validaGordura(dados.gordura)) {
+          erros.push({
+            campoId: 'campo-gordura',
+            mensagem: 'O campo Gordura corporal % é obrigatório e deve estar entre 0 e 100.'
+          });
+        }
+
+        return erros;
+      }
+
+      function exibirErros(erros) {
+        const caixaErros = document.getElementById('caixa-erros');
+        const listaErros = document.getElementById('lista-erros');
+
+        ['campo-nome', 'campo-peso', 'campo-altura', 'campo-gordura'].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.removeAttribute('aria-invalid');
+        });
+
+        if (erros.length === 0) {
+          caixaErros.classList.add('hidden');
+          listaErros.innerHTML = '';
+          return;
+        }
+
+        listaErros.innerHTML = erros.map(function (erro) {
+          const el = document.getElementById(erro.campoId);
+          if (el) el.setAttribute('aria-invalid', 'true');
+          return '<li>' + escaparHtml(erro.mensagem) + '</li>';
+        }).join('');
+
+        caixaErros.classList.remove('hidden');
+        caixaErros.focus();
+      }
+
+      function atualizarPreviewImc() {
+        const peso = converterDecimal(document.getElementById('campo-peso').value);
+        const altura = converterDecimal(document.getElementById('campo-altura').value);
+        const preview = document.getElementById('preview-imc');
+
+        if (validaPeso(peso) && validaAltura(altura)) {
+          const imc = calculaImc(peso, altura);
+          const classificacao = obterClassificacaoImc(parseFloat(imc));
+          preview.innerHTML =
+            '<span class="inline-flex items-center gap-2">' +
+              '<span>IMC: ' + imc + ' — </span>' +
+              classificacao.icone +
+              '<span>' + classificacao.texto + '</span>' +
+            '</span>';
+        } else {
+          preview.textContent = 'Informe peso e altura válidos para visualizar o IMC calculado.';
+        }
+      }
+
+      function inicializarFormulario() {
+        const form = document.getElementById('form-adiciona-paciente');
+        const campoPeso = document.getElementById('campo-peso');
+        const campoAltura = document.getElementById('campo-altura');
+
+        campoPeso.addEventListener('input', atualizarPreviewImc);
+        campoAltura.addEventListener('input', atualizarPreviewImc);
+
+        form.addEventListener('reset', function () {
+          window.setTimeout(function () {
+            exibirErros([]);
+            atualizarPreviewImc();
+          }, 10);
+        });
+
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+
+          const novoPaciente = {
+            id: 'pac-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
+            nome: document.getElementById('campo-nome').value.trim(),
+            peso: converterDecimal(document.getElementById('campo-peso').value),
+            altura: converterDecimal(document.getElementById('campo-altura').value),
+            gordura: converterDecimal(document.getElementById('campo-gordura').value)
+          };
+
+          const erros = validarFormulario(novoPaciente);
+          if (erros.length > 0) {
+            exibirErros(erros);
+            return;
+          }
+
+          exibirErros([]);
+          listaPacientes.push(novoPaciente);
+
+          const inputFiltro = document.getElementById('filtro-tabela');
+          if (inputFiltro && inputFiltro.value.trim() !== '') {
+            inputFiltro.value = '';
+          }
+
+          renderizarTabela(novoPaciente.id);
+          form.reset();
+          atualizarPreviewImc();
+
+          const imcStr = calculaImc(novoPaciente.peso, novoPaciente.altura);
+          const classificacao = obterClassificacaoImc(parseFloat(imcStr));
+          anunciarStatus(
+            'Paciente ' + novoPaciente.nome + ' adicionado com sucesso. IMC ' + imcStr + ', ' + classificacao.texto + '.'
+          );
+          document.getElementById('campo-nome').focus();
+        });
+      }
+
+      /* ======================================================================
+         8. INICIALIZAÇÃO DA APLICAÇÃO
+         ====================================================================== */
+      document.addEventListener('DOMContentLoaded', function () {
+        inicializarBarraAcessibilidade();
+        renderizarReferenciaImc();
+        renderizarTabela();
+        inicializarEventosTabela();
+        inicializarFiltro();
+        inicializarImportacaoExterna();
+        inicializarFormulario();
+      });
+    })();
+  </script>
+</body>
+</html>
